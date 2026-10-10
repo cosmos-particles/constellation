@@ -9,9 +9,14 @@ variable "description" {
 }
 
 variable "visibility" {
-  description = "One of \"public\", \"private\", or \"internal\"."
+  description = <<-EOT
+    One of "public", "private", or "internal". Defaults to "public" - branch
+    protection rules (github_branch_protection) require GitHub Pro/Team/Enterprise
+    on a private repo, so public is the default that works out of the box on a
+    free org. Set to "private" per-repo if you have the plan for it.
+  EOT
   type        = string
-  default     = "private"
+  default     = "public"
 
   validation {
     condition     = contains(["public", "private", "internal"], var.visibility)
@@ -25,7 +30,7 @@ variable "topics" {
 }
 
 variable "default_branch" {
-  description = "Branch to set as the repository's default. Applied after creation (and after push_initial_content, if set) via github_branch_default."
+  description = "Branch to set as the repository's default. Applied after creation via github_branch_default."
   type        = string
   default     = "main"
 }
@@ -66,8 +71,13 @@ variable "delete_branch_on_merge" {
 }
 
 variable "vulnerability_alerts" {
-  type    = bool
-  default = true
+  description = <<-EOT
+    When true, creates a github_repository_vulnerability_alerts resource to enable
+    Dependabot alerts. When false, no such resource is created, so Terraform doesn't
+    manage this setting either way (it won't force it off - it's simply left alone).
+  EOT
+  type        = bool
+  default     = true
 }
 
 variable "branch_protection" {
@@ -93,19 +103,4 @@ variable "collaborators" {
   description = "Map of GitHub username => permission, for individuals outside any team."
   type        = map(string)
   default     = {}
-}
-
-variable "push_initial_content" {
-  description = <<-EOT
-    If set, pushes the contents of source_path (an absolute local directory,
-    expected to already be a git working tree) to the repo's default branch
-    as its initial commit, using scripts/push-initial-content.sh. Requires
-    GITHUB_APP_ID/GITHUB_APP_INSTALLATION_ID/GITHUB_APP_PEM_FILE (or GITHUB_TOKEN)
-    in the environment the Terraform process runs in.
-  EOT
-  type = object({
-    source_path    = string
-    commit_message = optional(string, "Initial commit")
-  })
-  default = null
 }

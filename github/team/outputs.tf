@@ -4,6 +4,6 @@ output "team_ids" {
 }
 
 output "team_slugs" {
-  description = "Map of team name => team slug (used by github_team_repository, etc.)."
+  description = "Map of team name => team slug (used by github_team_repository, github_team_membership, etc.)."
   value       = { for name, team in github_team.this : name => team.slug }
 }

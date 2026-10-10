@@ -4,9 +4,9 @@ resource "github_repository" "this" {
   visibility  = var.visibility
   topics      = var.topics
 
-  # When we're pushing our own initial content, don't let GitHub auto-create a
-  # competing first commit - our push becomes the first commit instead.
-  auto_init = var.push_initial_content == null
+  # Let GitHub create the first commit (e.g. a README) - developers push their
+  # own content afterwards using their own credentials, not this module.
+  auto_init = true
 
   has_issues   = var.has_issues
   has_wiki     = var.has_wiki
@@ -16,35 +16,20 @@ resource "github_repository" "this" {
   allow_squash_merge     = var.allow_squash_merge
   allow_rebase_merge     = var.allow_rebase_merge
   delete_branch_on_merge = var.delete_branch_on_merge
-
-  vulnerability_alerts = var.vulnerability_alerts
 }
 
-resource "null_resource" "push_initial_content" {
-  count = var.push_initial_content != null ? 1 : 0
+# Separate resource rather than github_repository's own (now-deprecated)
+# vulnerability_alerts argument - absence of this resource just means
+# Terraform doesn't manage the setting, it doesn't force it off.
+resource "github_repository_vulnerability_alerts" "this" {
+  count = var.vulnerability_alerts ? 1 : 0
 
-  # Keyed on repo_id so this only runs once, at creation - re-applies never
-  # re-push and silently overwrite content someone has since committed upstream.
-  triggers = {
-    repo_id = github_repository.this.repo_id
-  }
-
-  provisioner "local-exec" {
-    command = join(" ", [
-      "${path.module}/scripts/push-initial-content.sh",
-      "'${var.push_initial_content.source_path}'",
-      "'${github_repository.this.http_clone_url}'",
-      "'${var.default_branch}'",
-      "'${var.push_initial_content.commit_message}'",
-    ])
-  }
+  repository = github_repository.this.name
 }
 
 resource "github_branch_default" "this" {
   repository = github_repository.this.name
   branch     = var.default_branch
-
-  depends_on = [null_resource.push_initial_content]
 }
 
 resource "github_branch_protection" "this" {

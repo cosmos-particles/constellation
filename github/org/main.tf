@@ -14,28 +14,3 @@ resource "github_organization_settings" "this" {
   members_can_create_private_repositories = var.org_settings.members_can_create_private_repositories
   members_can_fork_private_repositories   = var.org_settings.members_can_fork_private_repositories
 }
-
-resource "github_team" "this" {
-  for_each = var.teams
-
-  name        = each.key
-  description = each.value.description
-  privacy     = each.value.privacy
-}
-
-resource "github_team_membership" "this" {
-  for_each = merge([
-    for team_name, team in var.teams : {
-      for username, role in team.members :
-      "${team_name}:${username}" => {
-        team_id  = github_team.this[team_name].id
-        username = username
-        role     = role
-      }
-    }
-  ]...)
-
-  team_id  = each.value.team_id
-  username = each.value.username
-  role     = each.value.role
-}

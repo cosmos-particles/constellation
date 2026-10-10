@@ -28,13 +28,3 @@ variable "org_settings" {
   })
   default = null
 }
-
-variable "teams" {
-  description = "Map of team name => config. Membership roles are \"member\" or \"maintainer\"."
-  type = map(object({
-    description = optional(string)
-    privacy     = optional(string, "closed")
-    members     = optional(map(string), {})
-  }))
-  default = {}
-}
